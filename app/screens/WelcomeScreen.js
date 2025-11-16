@@ -16,6 +16,7 @@ const WelcomeScreen = ({ navigation }) => {
   const [isEnrolled, setIsEnrolled] = useState(false);
 
   // Check if device has a PIN / pattern / biometric enrolled
+  // Check this when the screen is loaded first time and save the data
   useEffect(() => {
     const checkEnrolled = async () => {
       const enrolled = await LocalAuthentication.isEnrolledAsync();

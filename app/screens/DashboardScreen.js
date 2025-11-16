@@ -7,58 +7,47 @@ import {
   StatusBar,
   Text,
   TextInput,
-  ToastAndroid,
   TouchableOpacity,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import useTodoListStore from "../stores/todoListStore";
 import styles from "../styles/DashboardScreenStyles";
 
 const DashboardScreen = ({ navigation }) => {
-  const [todos, setTodos] = useState([
-    { id: "1", text: "First Item" },
-    { id: "2", text: "Second Item" },
-    { id: "3", text: "Third Item" },
-    { id: "4", text: "Fourth Item" },
-  ]);
-  const [input, setInput] = useState("");
-  const [selectedId, setSelectedId] = useState(null);
+  // Zustand store hooks
+  const { todos, selectedId, addOrUpdateTodo, removeTodo, selectTodo } = useTodoListStore();
 
+  // Local state for input text
+  const [input, setInput] = useState("");
+
+  // To show alert message when user doesn't type anything to add or update
   const showToast = (message) => {
-    if (Platform.OS === "android") ToastAndroid.show(message, ToastAndroid.SHORT);
-    else Alert.alert("", message);
+    Alert.alert("Alert", message, [{ text: "OK" }]);
   };
 
-  const addOrUpdateTodo = () => {
+  // Handler for Add / Update button
+  const handleAddOrUpdate = () => {
     if (input.trim() === "") {
       showToast("Please enter item name");
       return;
     }
 
-    if (selectedId) {
-      setTodos((prev) =>
-        prev.map((item) =>
-          item.id === selectedId ? { ...item, text: input } : item
-        )
-      );
-      setSelectedId(null);
-    } else {
-      setTodos([...todos, { id: Date.now().toString(), text: input }]);
-    }
-
+    addOrUpdateTodo(input);
     setInput("");
   };
 
-  const removeTodo = (id) => {
+  // Handler for selecting a todo
+  const handleSelectTodo = (item) => {
+    selectTodo(item);
+    setInput(item.text);
+  };
+
+  // Handler for removing a todo with confirmation if selected
+  const handleRemoveTodo = (id) => {
     const isSelected = selectedId === id;
 
-    const removeItem = () => {
-      setTodos(todos.filter((item) => item.id !== id));
-      if (isSelected) {
-        setSelectedId(null);
-        setInput("");
-      }
-    };
+    const removeItem = () => removeTodo(id);
 
     if (isSelected) {
       Alert.alert(
@@ -71,16 +60,6 @@ const DashboardScreen = ({ navigation }) => {
       );
     } else {
       removeItem();
-    }
-  };
-
-  const selectTodo = (item) => {
-    if (selectedId === item.id) {
-      setSelectedId(null);
-      setInput("");
-    } else {
-      setSelectedId(item.id);
-      setInput(item.text);
     }
   };
 
@@ -106,7 +85,7 @@ const DashboardScreen = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 100 }}
             renderItem={({ item }) => (
-              <TouchableOpacity onPress={() => selectTodo(item)}>
+              <TouchableOpacity onPress={() => handleSelectTodo(item)}>
                 <View
                   style={[
                     styles.todoItem,
@@ -119,7 +98,7 @@ const DashboardScreen = ({ navigation }) => {
                   <View style={[styles.circle, { backgroundColor: "#0047AB" }]} />
                   <Text style={styles.todoText}>{item.text}</Text>
                   <TouchableOpacity
-                    onPress={() => removeTodo(item.id)}
+                    onPress={() => handleRemoveTodo(item.id)}
                     style={{ paddingHorizontal: 20, paddingVertical: 10 }}
                   >
                     <Text style={styles.remove}>REMOVE</Text>
@@ -138,13 +117,8 @@ const DashboardScreen = ({ navigation }) => {
             value={input}
             onChangeText={setInput}
           />
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={addOrUpdateTodo}
-          >
-            <Text style={styles.addText}>
-              {selectedId ? "UPDATE" : "ADD"}
-            </Text>
+          <TouchableOpacity style={styles.addButton} onPress={handleAddOrUpdate}>
+            <Text style={styles.addText}>{selectedId ? "UPDATE" : "ADD"}</Text>
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
